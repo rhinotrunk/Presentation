@@ -354,10 +354,14 @@ function setupBeats(slide) {
 // Returns true if the advance was used by the beat video (so the slide should not change).
 function beatAdvance() {
   if (!beats) return false;
-  const b = beats;
-  if (b.playing) return true;                       // still running to the next pause: hold the slide
-  if (b.next > b.stops.length) return false;        // played out: move on
-  b.next++; b.playing = true; b.v.play();
+  const b = beats, v = b.v;
+  if (v.error || b.next > b.stops.length) return false;    // broken video, or playing/played out the tail: move on
+  if (b.playing) {                                  // still running to the next pause: jump straight there
+    v.pause(); v.currentTime = b.stops[b.next - 1]; b.playing = false;
+    return true;
+  }
+  b.next++; b.playing = true;
+  v.play().catch(() => { b.playing = false; });     // never leave the slide stuck if playback is refused
   return true;
 }
 // On load slide 1 sits still; the first advance (or right-click) starts its animation instead of moving on.
