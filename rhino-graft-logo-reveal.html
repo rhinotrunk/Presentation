@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rhino Graft logo reveal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono&family=Inter:wght@400;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; height:100%; overflow:hidden; background:#0F1720; }
+  #fit { position:fixed; inset:0; cursor:pointer; }
+  #stage {
+    --ground:#0F1720; --main:#E0A458; --second:#E6EDF3; --accent:#4CC38A;
+    --rule:color-mix(in srgb, var(--second) 7%, var(--ground));
+    --frame:color-mix(in srgb, var(--second) 30%, var(--ground));
+    --dim:color-mix(in srgb, var(--second) 64%, var(--ground));
+    position:absolute; left:50%; top:50%; width:1920px; height:1080px; overflow:hidden;
+    transform-origin:0 0; color:var(--second);
+    font-family:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .ground { position:absolute; inset:0; background:var(--ground); }
+  .art { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+  .words { position:absolute; margin:0; display:flex; flex-direction:column; gap:24px; }
+  .words > * { margin:0; }
+  .line { font-family:"Space Grotesk", "Inter", system-ui, sans-serif; font-size:84px; line-height:1.05; font-weight:700; }
+  .sub { font-size:36px; }
+  .graft-row { font-family:"DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size:34px; line-height:40px; color:var(--dim); }
+  .graft-name { font-size:150px; letter-spacing:-0.02em; }
+  .graft-name span { display:inline-block; white-space:pre; }
+  .graft-sub { font-size:38px; color:var(--dim); }
+</style>
+</head>
+<body>
+<div id="fit" title="Click or press R to replay"><div id="stage"></div></div>
+<script>
+(function () {
+  // ---- Small helpers the animation is written against ----
+  var clamp01 = function (x) { return x < 0 ? 0 : x > 1 ? 1 : x; };
+  var seg = function (t, a, b) { return clamp01((t - a) / (b - a)); };
+  var lerp = function (a, b, p) { return a + (b - a) * p; };
+  var eo = function (x) { return 1 - Math.pow(1 - x, 3); };
+  var ei = function (x) { return x * x * x; };
+  var eio = function (x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  var eob = function (x, s) { s = s == null ? 1.4 : s; var y = x - 1; return 1 + (s + 1) * y * y * y + s * y * y; };
+
+  var DURATION = 7;
+  var stage = document.getElementById('stage');
+
+  // ---- Geometry: the commit graph, and the grafted tree it becomes ----
+  var GRAPH = {
+    trunk: [[420, 860], [420, 220]],
+    a: [[420, 860], [500, 700], [500, 300], [420, 220]],
+    b: [[420, 640], [340, 540], [340, 460], [420, 380]],
+    nodes: [[420, 860], [500, 700], [340, 540], [420, 380], [420, 220]]
+  };
+  var TREE = {
+    trunk: [[440, 850], [440, 240]],
+    a: [[440, 620], [530, 530], [630, 350], [630, 350]],
+    b: [[440, 470], [360, 400], [290, 290], [290, 290]],
+    nodes: [[440, 850], [630, 350], [290, 290], [440, 620], [440, 240]]
+  };
+  var JOINTS = [[440, 620], [440, 470]];
+  var APPEAR = [-0.5, 0.0, 0.45, 0.9, 1.35];
+  var FLOORS = [120, 180, 240];
+
+  // The building model: a wireframe in isometric, drawn from model coordinates.
+  var pt = function (x, y, z) { return (1440 + (x - y) * 1.126).toFixed(1) + ' ' + (566 + (x + y) * 0.65 - z * 1.3).toFixed(1); };
+  var edge = function (a, b) { return 'M' + pt(a[0], a[1], a[2]) + ' L' + pt(b[0], b[1], b[2]); };
+  var box = function (x0, y0, x1, y1, z0, z1) {
+    return 'M' + pt(x0, y0, z1) + ' L' + pt(x1, y0, z1) + ' L' + pt(x1, y1, z1) + ' L' + pt(x0, y1, z1) + ' Z ' +
+      edge([x1, y0, z1], [x1, y0, z0]) + ' ' + edge([x1, y1, z1], [x1, y1, z0]) + ' ' + edge([x0, y1, z1], [x0, y1, z0]) + ' ' +
+      'M' + pt(x0, y1, z0) + ' L' + pt(x1, y1, z0) + ' L' + pt(x1, y0, z0);
+  };
+
+  // ---- Build the stage once ----
+  var tick = function (x, y, dx, dy) { return '<path d="M' + x + ' ' + (y + dy) + ' V' + y + ' H' + (x + dx) + '"/>'; };
+  var sheet = '<defs><pattern id="graft-grid" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M80 0 H0 V80" style="fill:none;stroke:var(--rule);stroke-width:2"/></pattern></defs>' +
+    '<g><rect width="1920" height="1080" fill="url(#graft-grid)"/><g style="fill:none;stroke:var(--frame);stroke-width:3">' +
+    tick(60, 60, 50, 50) + tick(1860, 60, -50, 50) + tick(60, 1020, 50, -50) + tick(1860, 1020, -50, -50) + '</g></g>';
+  var line = function (cls, color) { return '<path class="' + cls + '" pathLength="1" stroke-dasharray="1" style="fill:none;stroke:' + color + ';stroke-linecap:round;stroke-linejoin:round"/>'; };
+  var tie = '<g class="graft-tie" style="fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round"><path d="M-30 -15 H30 M-30 0 H30 M-30 15 H30"/></g>';
+  var part = function (cls, color) { return '<path class="' + cls + '" style="stroke:' + color + ';stroke-width:4"/>'; };
+
+  stage.innerHTML = '<div class="ground">' +
+    '<svg class="art graft-art" viewBox="0 0 1920 1080">' + sheet +
+      '<g class="graft-model" style="fill:none;stroke-linecap:round;stroke-linejoin:round">' +
+        '<path class="graft-site" d="M' + pt(-40, -40, 0) + ' L' + pt(370, -40, 0) + ' L' + pt(370, 200, 0) + ' L' + pt(-40, 200, 0) + ' Z" style="stroke:var(--frame);stroke-width:3"/>' +
+        part('graft-podium', 'var(--main)') + part('graft-tower', 'var(--main)') + part('graft-core', 'var(--second)') +
+        '<path class="graft-canopy" d="' + box(240, 20, 330, 140, 46, 54) + ' ' + edge([330, 20, 46], [330, 20, 0]) + ' ' + edge([330, 140, 46], [330, 140, 0]) + '" style="stroke-width:4"/></g>' +
+      '<g class="graft-mark">' + line('graft-branch-a', 'var(--second)') + line('graft-branch-b', 'var(--second)') + line('graft-trunk', 'var(--main)') +
+      tie + tie +
+      GRAPH.nodes.map(function () { return '<circle class="graft-node" style="fill:var(--ground);stroke-width:5"/>'; }).join('') + '</g></svg>' +
+    '<div class="words graft-log" style="left:640px;top:200px;width:1000px;gap:120px">' +
+      '<p class="graft-row">e41b7a2 graft canopy</p>' +
+      '<p class="graft-row">7ab21e4 graft stair-core</p>' +
+      '<p class="graft-row">2f6c9d1 branch stair-core</p>' +
+      '<p class="graft-row">b83e05a branch canopy</p>' +
+      '<p class="graft-row">1d4a6c0 init trunk</p></div>' +
+    '<div class="words graft-title" style="left:700px;top:428px;width:1120px"><h1 class="line graft-name">Rhino Graft</h1><p class="sub graft-sub">Every branch, grafted to the trunk</p></div></div>';
+
+  var q = function (s) { return stage.querySelector(s); };
+  var all = function (s) { return Array.prototype.slice.call(stage.querySelectorAll(s)); };
+  var el = {
+    art: q('.graft-art'), trunk: q('.graft-trunk'), brA: q('.graft-branch-a'), brB: q('.graft-branch-b'),
+    ties: all('.graft-tie'), nodes: all('.graft-node'), rows: all('.graft-row').reverse(),
+    name: q('.graft-name'), sub: q('.graft-sub'), model: q('.graft-model'), site: q('.graft-site'),
+    podium: q('.graft-podium'), tower: q('.graft-tower'), core: q('.graft-core'), canopy: q('.graft-canopy')
+  };
+  el.art.style.transformOrigin = '440px 540px';
+
+  // The name arrives word by word: split it into spans once.
+  var nameWords = el.name.textContent.split(' ');
+  el.name.setAttribute('aria-label', el.name.textContent);
+  el.name.innerHTML = nameWords.map(function (w, i) { return '<span aria-hidden="true">' + w + (i < nameWords.length - 1 ? ' ' : '') + '</span>'; }).join('');
+  var nameSpans = all('.graft-name span');
+
+  // ---- The whole picture is a function of t (seconds) ----
+  function render(t) {
+    var m = eio(seg(t, 2.4, 3.8));
+    var sway = 4 * Math.sin(t * 1.3) * m;
+    var mix = function (A, B, tipFrom) { return A.map(function (p, i) { return [lerp(p[0], B[i][0], m) + (i >= tipFrom ? sway : 0), lerp(p[1], B[i][1], m)]; }); };
+    var d = function (pts) { return pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' '); };
+    var draw = function (node, pts, p, w) {
+      node.setAttribute('d', d(pts));
+      node.style.strokeDashoffset = (1 - p).toFixed(4);
+      node.style.strokeWidth = w.toFixed(1);
+      node.style.opacity = p > 0.001 ? 1 : 0;
+    };
+    var i, k;
+
+    // One slow push across the film.
+    el.art.style.transform = 'scale(' + lerp(1, 1.025, seg(t, 0, DURATION)).toFixed(4) + ')';
+    draw(el.trunk, mix(GRAPH.trunk, TREE.trunk, 9), eo(seg(t, -1.2, 1.3)), lerp(6, 20, m));
+    draw(el.brA, mix(GRAPH.a, TREE.a, 2), eio(seg(t, -0.4, 1.5)), lerp(6, 12, m));
+    draw(el.brB, mix(GRAPH.b, TREE.b, 2), eio(seg(t, 0.3, 1.0)), lerp(6, 12, m));
+
+    // The model changes with each commit: branch work dashed, grafted work solid.
+    var grow = APPEAR.map(function (a) { return eo(seg(t, a, a + 0.45)); });
+    var tone = function (p) { return 'color-mix(in srgb, var(--main) ' + Math.round(p * 100) + '%, var(--second))'; };
+    var dash = function (p) { return '14 ' + lerp(10, 0, p).toFixed(1); };
+    el.site.style.opacity = grow[0].toFixed(3);
+    el.podium.setAttribute('d', box(0, 0, 240, 160, 0, 60 * grow[0]));
+    el.podium.style.opacity = grow[0] > 0.001 ? 1 : 0;
+    el.canopy.style.opacity = grow[1].toFixed(3);
+    el.canopy.style.stroke = tone(grow[4]);
+    el.canopy.style.strokeDasharray = dash(grow[4]);
+    el.core.setAttribute('d', box(20, 20, 80, 80, 0, 330 * grow[2]));
+    el.core.style.opacity = grow[2] > 0.001 ? 1 : 0;
+    el.core.style.stroke = tone(grow[3]);
+    el.core.style.strokeDasharray = dash(grow[3]);
+    var top = 60 + 240 * grow[3];
+    el.tower.setAttribute('d', box(0, 0, 240, 160, 60, top) + FLOORS.filter(function (z) { return z < top - 4; }).map(function (z) { return ' M' + pt(0, 160, z) + ' L' + pt(240, 160, z) + ' L' + pt(240, 0, z); }).join(''));
+    el.tower.style.opacity = grow[3] > 0.001 ? 1 : 0;
+    var gone = ei(seg(t, 2.1, 2.5));
+    el.model.style.opacity = (1 - gone).toFixed(3);
+    el.model.setAttribute('transform', 'translate(' + (50 * gone).toFixed(1) + ' 0)');
+
+    // Commit nodes pop on row by row, then ride the lines to their places on the tree.
+    for (i = 0; i < el.nodes.length; i++) {
+      var n = el.nodes[i], tip = i === 1 || i === 2;
+      var x = lerp(GRAPH.nodes[i][0], TREE.nodes[i][0], m) + (tip ? sway : 0), y = lerp(GRAPH.nodes[i][1], TREE.nodes[i][1], m);
+      var pop = eob(seg(t, APPEAR[i], APPEAR[i] + 0.32), 1.6);
+      n.setAttribute('cx', x.toFixed(1));
+      n.setAttribute('cy', y.toFixed(1));
+      n.setAttribute('r', Math.max(0, lerp(13, tip ? 17 : 15, m) * pop).toFixed(1));
+      n.style.stroke = tip ? 'color-mix(in srgb, var(--accent) ' + Math.round(m * 100) + '%, var(--second))' : 'var(--main)';
+      n.style.opacity = i === 3 ? 1 - seg(t, 3.65, 3.95) : 1;
+    }
+
+    // The ties snap across each joint once the branches have landed.
+    for (k = 0; k < el.ties.length; k++) {
+      var s = eob(seg(t, 3.7 + k * 0.25, 4.05 + k * 0.25), 1.7);
+      el.ties[k].setAttribute('transform', 'translate(' + JOINTS[k][0] + ' ' + JOINTS[k][1] + ') rotate(-12) scale(' + Math.max(0.001, s).toFixed(3) + ' 1)');
+      el.ties[k].style.opacity = s > 0.01 ? 1 : 0;
+    }
+
+    // The manifest lines arrive with their commits and leave before the graph stands up.
+    for (i = 0; i < el.rows.length; i++) {
+      var a = eo(seg(t, APPEAR[i], APPEAR[i] + 0.28)), out = ei(seg(t, 2.1 + (4 - i) * 0.05, 2.45 + (4 - i) * 0.05));
+      el.rows[i].style.opacity = (a * (1 - out)).toFixed(3);
+      el.rows[i].style.transform = 'translateX(' + (lerp(24, 0, a) - 40 * out).toFixed(1) + 'px)';
+    }
+
+    // The name, word by word, then the line under it.
+    for (i = 0; i < nameSpans.length; i++) {
+      var p = eo(seg(t, 4.2 + i * 0.11, 4.7 + i * 0.11));
+      nameSpans[i].style.opacity = p.toFixed(3);
+      nameSpans[i].style.transform = 'translateX(' + lerp(30, 0, p).toFixed(1) + 'px)';
+    }
+    el.sub.style.opacity = eo(seg(t, 4.8, 5.2)).toFixed(3);
+  }
+
+  // ---- Fit the 1920x1080 stage to the window ----
+  function fit() {
+    var k = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    stage.style.transform = 'scale(' + k + ') translate(-50%, -50%)';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  // ---- Playback: plays once on load, then holds on the logo (the tips keep swaying).
+  // Click or press R to replay. Add #loop to the address to loop it.
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var loop = location.hash === '#loop';
+  var t0 = performance.now();
+  function frame(now) {
+    var t = (now - t0) / 1000;
+    if (loop && t > DURATION + 1.5) { t0 = now; t = 0; }
+    render(t);
+    requestAnimationFrame(frame);
+  }
+  function replay() { t0 = performance.now(); }
+  document.getElementById('fit').addEventListener('click', replay);
+  window.addEventListener('keydown', function (e) { if (e.key === 'r' || e.key === 'R') replay(); });
+  if (reduce) { render(DURATION); } else { requestAnimationFrame(frame); }
+})();
+</script>
+</body>
+</html>
