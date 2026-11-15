@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Graft Team</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;500;600;700&family=Chivo+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a 16:9 slide. Portraits are placed by hand in container units (cqw), so the whole composition scales with the slide. */
+:root {
+  color-scheme: dark;
+  /* Brand (STYLE.md): --main = main branch and primary actions, --accent = anything an agent did. */
+  --ground: #292929;
+  --main: #76A7DB;
+  --accent: #A78BFA;
+  --second: #EDEDED;
+  --warn: #F0A0A6;
+  --rule: color-mix(in srgb, var(--second) 7%, var(--ground));
+  --frame: color-mix(in srgb, var(--second) 30%, var(--ground));
+  --dim: color-mix(in srgb, var(--second) 64%, var(--ground));
+  /* Name and title plates: darker than the page so text and lines never mix. A blend of black into --ground, like the other derived tokens. */
+  --plate: color-mix(in srgb, #000 55%, var(--ground));
+  /* Lane colours (STYLE.md): decoration only, they mean nothing. Blue and violet carry meaning, and pink and cyan sit too close to them, so all four are left out. */
+  --lane-orange: #e0953f; --lane-green: #3fb58a; --lane-red: #e0605a; --lane-grey: #9aa3b2;
+  --sans: "Chivo", "Segoe UI", system-ui, sans-serif;
+  --mono: "Chivo Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--ground); color: var(--second); font-family: var(--sans); display: grid; place-items: center; overflow: hidden; }
+.slide { container-type: inline-size; position: relative; width: min(100vw, calc(100vh * 16 / 9)); aspect-ratio: 16 / 9; overflow: hidden;
+  background:
+    radial-gradient(ellipse 40cqw 28cqw at 20% 32%, color-mix(in srgb, var(--second) 4.5%, transparent), transparent 70%),
+    radial-gradient(ellipse 36cqw 26cqw at 80% 70%, color-mix(in srgb, var(--second) 3.5%, transparent), transparent 70%),
+    var(--ground); }
+
+.vine { position: absolute; inset: 0; width: 100%; height: 100%; }
+.vine path { fill: none; stroke-linecap: round; }
+.vine .lane.main { stroke: var(--main); stroke-width: 0.26; opacity: 1; }
+/* Commit dots, as drawn in the app's graph: solid in the lane colour, merges as hollow rings, agent commits violet. */
+.vine .c { stroke-width: 0.3; }
+.vine .c.main { fill: var(--main); stroke: var(--main); }
+.vine .c.green { fill: var(--lane-green); stroke: var(--lane-green); }
+.vine .c.agent { fill: var(--accent); stroke: var(--accent); }
+.vine .c.merge { fill: var(--ground); stroke: var(--main); stroke-width: 0.38; }
+.vine .lane.green { stroke: var(--lane-green); stroke-width: 0.22; opacity: 1; }
+.vine .lane.violet { stroke: var(--accent); stroke-width: 0.22; opacity: 1; }
+
+.title { position: absolute; z-index: 5; left: 5cqw; top: 4.2cqw; margin: 0; padding: 1cqw 1.4cqw 1.1cqw; background: var(--plate); border-radius: 0.9cqw; color: var(--second); font-size: 3.4cqw; font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+.title small { display: block; margin-top: 0.7cqw; font: 500 1.05cqw var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--second); }
+
+/* Each person: position (x, y = centre), size, tilt, and a different organic outline. */
+.person { position: absolute; left: calc(var(--x) * 1cqw); top: calc(var(--y) * 1cqw); width: calc(var(--s) * 1cqw); aspect-ratio: 1;
+  transform: translate(-50%, -50%) rotate(var(--r)); margin: 0; animation: drift var(--t, 9s) ease-in-out infinite alternate; animation-delay: var(--d, 0s); }
+.person .shape { position: absolute; inset: 0; border-radius: var(--b); overflow: hidden; background: var(--ground);
+  box-shadow: 0 1.2cqw 2.6cqw rgb(0 0 0 / 0.45); }
+.person img { width: 100%; height: 100%; object-fit: cover; display: block; transform: rotate(calc(var(--r) * -1)) scale(1.12); }
+/* An offset outline in a different blob, like a second print that did not quite register. */
+.person::before { content: ""; position: absolute; inset: -0.9cqw; border-radius: var(--b2); border: 0.24cqw solid var(--ring, var(--lane-grey)); opacity: 0.95; transform: rotate(var(--r2)) translate(var(--ox), var(--oy)); }
+.person figcaption { position: absolute; z-index: 4; left: 50%; top: calc(100% + 1cqw); transform: translateX(-50%) rotate(calc(var(--r) * -0.6)); white-space: nowrap;
+  padding: 0.38cqw 1cqw 0.42cqw; background: var(--plate); border-radius: 0.55cqw; color: var(--second); font: 500 1.2cqw var(--mono); letter-spacing: 0.04em; }
+
+@keyframes drift { from { translate: 0 -0.35cqw; } to { translate: 0.25cqw 0.35cqw; } }
+@media (prefers-reduced-motion: reduce) { .person { animation: none; } }
+</style>
+</head>
+<body>
+<main class="slide" aria-label="The Graft team">
+  <svg class="vine" viewBox="0 0 100 56.25" preserveAspectRatio="none" aria-hidden="true">
+    <path class="lane green" d="M 31.50 27.97 C 32.08 26.65, 33.58 22.53, 35.00 20.00 C 36.42 17.47, 38.17 14.33, 40.00 12.80 C 41.83 11.27, 44.17 10.57, 46.00 10.80 C 47.83 11.03, 49.17 13.20, 51.00 14.20 C 52.83 15.20, 55.08 16.73, 57.00 16.80 C 58.92 16.87, 60.67 15.47, 62.50 14.60 C 64.33 13.73, 66.17 12.30, 68.00 11.60 C 69.83 10.90, 71.67 10.13, 73.50 10.40 C 75.33 10.67, 77.08 12.93, 79.00 13.20 C 80.92 13.47, 83.20 11.20, 85.00 12.00 C 86.80 12.80, 88.38 15.30, 89.80 18.00 C 91.22 20.70, 92.88 26.50, 93.50 28.21" />
+    <path class="lane violet" d="M 1.50 29.47 C 2.08 30.56, 3.67 33.78, 5.00 36.00 C 6.33 38.22, 7.17 42.03, 9.50 42.80 C 11.83 43.57, 15.83 40.17, 19.00 40.60 C 22.17 41.03, 25.33 45.00, 28.50 45.40 C 31.67 45.80, 34.83 43.77, 38.00 43.00 C 41.17 42.23, 44.03 40.60, 47.50 40.80 C 50.97 41.00, 55.05 43.80, 58.80 44.20 C 62.55 44.60, 66.47 43.83, 70.00 43.20 C 73.53 42.57, 76.58 40.57, 80.00 40.40 C 83.42 40.23, 88.00 42.93, 90.50 42.20 C 93.00 41.47, 93.67 38.12, 95.00 36.00 C 96.33 33.88, 97.92 30.57, 98.50 29.49" />
+    <path class="lane main" d="M -2.00 31.00 C -0.08 30.33, 5.83 27.08, 9.50 27.00 C 13.17 26.92, 16.83 30.58, 20.00 30.50 C 23.17 30.42, 25.17 26.00, 28.50 26.50 C 31.83 27.00, 36.83 33.50, 40.00 33.50 C 43.17 33.50, 45.00 27.05, 47.50 26.50 C 50.00 25.95, 52.50 29.03, 55.00 30.20 C 57.50 31.37, 60.00 34.07, 62.50 33.50 C 65.00 32.93, 67.42 27.38, 70.00 26.80 C 72.58 26.22, 75.50 28.97, 78.00 30.00 C 80.50 31.03, 82.92 33.33, 85.00 33.00 C 87.08 32.67, 87.67 28.42, 90.50 28.00 C 93.33 27.58, 100.08 30.08, 102.00 30.50" />
+    <circle class="c main" cx="8" cy="27.17" r="0.85" /><circle class="c main" cx="14.5" cy="28.53" r="0.85" /><circle class="c main" cx="21" cy="30.33" r="0.85" /><circle class="c main" cx="38" cy="32.87" r="0.85" /><circle class="c main" cx="44.5" cy="29.48" r="0.85" /><circle class="c main" cx="51" cy="27.54" r="0.85" /><circle class="c main" cx="57.5" cy="31.70" r="0.85" /><circle class="c main" cx="64" cy="32.63" r="0.85" /><circle class="c main" cx="71" cy="26.73" r="0.85" /><circle class="c main" cx="77.5" cy="29.77" r="0.85" /><circle class="c main" cx="84" cy="32.98" r="0.85" /><circle class="c green" cx="50.5" cy="13.89" r="0.85" /><circle class="c green" cx="71.5" cy="10.47" r="0.85" /><circle class="c agent" cx="57.5" cy="43.98" r="0.85" /><circle class="c agent" cx="80" cy="40.40" r="0.85" /><circle class="c main merge" cx="31.5" cy="27.97" r="1.05" /><circle class="c main merge" cx="93.5" cy="28.21" r="1.05" /><circle class="c main merge" cx="1.5" cy="29.47" r="1.05" /><circle class="c main merge" cx="98.5" cy="29.49" r="1.05" />
+  </svg>
+
+  <h1 class="title">The people<br>behind Graft<small>AEC Tech NYC 2026</small></h1>
+
+  <!-- Top arc -->
+  <figure class="person" style="--x:9.5; --y:42; --s:14; --r:-4deg; --b:63% 37% 70% 30% / 38% 66% 34% 62%; --b2:38% 62% 40% 60% / 60% 38% 62% 40%; --r2:7deg; --ox:0.4cqw; --oy:-0.3cqw; --t:10s; --d:-1s; --ring:var(--lane-orange);">
+    <div class="shape"><img src="team/alex-schiftner.png" alt="Alex Schiftner"></div><figcaption>Alex Schiftner</figcaption></figure>
+  <figure class="person" style="--x:40; --y:12; --s:14; --r:3deg; --b:38% 62% 34% 66% / 62% 36% 64% 38%; --b2:66% 34% 58% 42% / 36% 60% 40% 64%; --r2:-6deg; --ox:-0.5cqw; --oy:0.4cqw; --t:12s; --d:-4s; --ring:var(--lane-red);">
+    <div class="shape"><img src="team/andrea-cutroni.png" alt="Andrea Cutroni"></div><figcaption>Andrea Cutroni</figcaption></figure>
+  <figure class="person" style="--x:62.5; --y:15.5; --s:14; --r:-5deg; --b:70% 30% 46% 54% / 44% 62% 38% 56%; --b2:34% 66% 62% 38% / 64% 40% 60% 36%; --r2:9deg; --ox:0.3cqw; --oy:0.5cqw; --t:9s; --d:-2s; --ring:var(--lane-green);">
+    <div class="shape"><img src="team/edwin-hernandez.png" alt="Edwin Hernandez"></div><figcaption>Edwin Hernandez</figcaption></figure>
+  <figure class="person" style="--x:85; --y:12.5; --s:14; --r:4deg; --b:34% 66% 60% 40% / 58% 34% 66% 42%; --b2:60% 40% 36% 64% / 38% 62% 38% 62%; --r2:-8deg; --ox:-0.4cqw; --oy:-0.4cqw; --t:11s; --d:-5s; --ring:var(--lane-grey);">
+    <div class="shape"><img src="team/hugo-thibaudeau.png" alt="Hugo Thibaudeau"></div><figcaption>Hugo Thibaudeau</figcaption></figure>
+
+  <!-- Lower arc -->
+  <figure class="person" style="--x:28.5; --y:44.3; --s:14; --r:5deg; --b:60% 40% 36% 64% / 66% 40% 60% 34%; --b2:40% 60% 66% 34% / 40% 58% 42% 60%; --r2:-5deg; --ox:0.5cqw; --oy:0.3cqw; --t:10s; --d:-3s; --ring:var(--lane-green);">
+    <div class="shape"><img src="team/jonathan-rabagliati.png" alt="Jonathan Rabagliati"></div><figcaption>Jonathan Rabagliati</figcaption></figure>
+  <figure class="person" style="--x:47.5; --y:41.5; --s:14; --r:-3deg; --b:42% 58% 66% 34% / 36% 64% 36% 64%; --b2:64% 36% 40% 60% / 62% 36% 64% 38%; --r2:6deg; --ox:-0.3cqw; --oy:0.5cqw; --t:13s; --d:-6s; --ring:var(--lane-orange);">
+    <div class="shape"><img src="team/marshall-hayward.png" alt="Marshall Hayward"></div><figcaption>Marshall Hayward</figcaption></figure>
+  <figure class="person" style="--x:70; --y:44; --s:14; --r:4deg; --b:66% 34% 40% 60% / 40% 64% 36% 60%; --b2:36% 64% 60% 40% / 58% 38% 62% 42%; --r2:-7deg; --ox:0.4cqw; --oy:-0.4cqw; --t:9.5s; --d:-1.5s; --ring:var(--lane-red);">
+    <div class="shape"><img src="team/thomas-gaudin.png" alt="Thomas Gaudin"></div><figcaption>Thomas Gaudin</figcaption></figure>
+  <figure class="person" style="--x:90.5; --y:41.8; --s:14; --r:-4deg; --b:38% 62% 62% 38% / 62% 38% 62% 38%; --b2:62% 38% 36% 64% / 36% 62% 38% 64%; --r2:8deg; --ox:-0.5cqw; --oy:0.3cqw; --t:11.5s; --d:-4.5s; --ring:var(--lane-orange);">
+    <div class="shape"><img src="team/wojtek-karnowka.png" alt="Wojtek Karnowka"></div><figcaption>Wojtek Karnowka</figcaption></figure>
+</main>
+</body>
+</html>
