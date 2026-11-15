@@ -1,11 +1,11 @@
-Add stage
-Generate fan raked seating
-Add curved acoustic panels
-Merge seating
-Remove seating for acces rows
-Remove center seating row
+01_Base stage
+02_Generate fan raked seating
+03_Generate acoustic panels
+04_Merge seating
+05_Add acces rows - off
+06_Add center circulation - off
 Add balcony
 Generate balcony slab
 Generate balcony guardrail
-Remove seats for access rows
+Remove seats for access rows - off
 Merge balcony
