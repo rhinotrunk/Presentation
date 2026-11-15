@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Graft Judge Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;500;600;700&family=Chivo+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one card at a time, judge filters on top, controls below. Same palette and type as presentation.html. */
+:root {
+  color-scheme: dark;
+  --ground: #0F1720;
+  --main: #E0A458;
+  --second: #E6EDF3;
+  --accent: #4CC38A;
+  --warn: #E5766B;
+  --rule: color-mix(in srgb, var(--second) 7%, var(--ground));
+  --frame: color-mix(in srgb, var(--second) 30%, var(--ground));
+  --dim: color-mix(in srgb, var(--second) 64%, var(--ground));
+  --card: color-mix(in srgb, var(--second) 4%, var(--ground));
+  --sans: "Chivo", "Segoe UI", system-ui, sans-serif;
+  --mono: "Chivo Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--ground); color: var(--second); font: 16px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 860px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 48px; min-height: 100%; display: grid; gap: 22px; align-content: start; }
+header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--rule); padding-bottom: 16px; }
+.brand { display: flex; align-items: baseline; gap: 12px; }
+.brand b { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: var(--main); }
+.brand span { font: 13px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+.progress { font: 13px var(--mono); color: var(--dim); }
+.progress strong { color: var(--second); font-weight: 500; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 13px var(--sans); color: var(--dim); background: transparent; border: 1px solid var(--frame); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.chip:hover { color: var(--second); }
+.chip[aria-pressed="true"] { color: var(--ground); background: var(--main); border-color: var(--main); font-weight: 600; }
+.chip .n { font-family: var(--mono); opacity: 0.7; margin-left: 4px; }
+
+.stage { perspective: 1600px; }
+.card { position: relative; min-height: 360px; cursor: pointer; transform-style: preserve-3d; transition: transform 0.5s cubic-bezier(.2,.7,.2,1); }
+.card.flipped { transform: rotateY(180deg); }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+.face { position: absolute; inset: 0; backface-visibility: hidden; background: var(--card); border: 1px solid var(--frame); border-radius: 14px; padding: 28px 30px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+.back { transform: rotateY(180deg); }
+.meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; font: 12px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+.meta .who { color: var(--main); }
+.meta .tag { border: 1px solid var(--frame); border-radius: 4px; padding: 1px 6px; }
+.meta .tag.watch { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 50%, var(--ground)); }
+.q { font-size: clamp(22px, 3.6vw, 30px); line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; margin: auto 0; }
+.hint { font: 12px var(--mono); color: var(--dim); }
+.say { font-size: 19px; line-height: 1.4; font-weight: 600; color: var(--second); border-left: 3px solid var(--accent); padding-left: 14px; text-wrap: pretty; }
+.points { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--second); }
+.points li::marker { color: var(--accent); }
+.avoid { font-size: 14px; color: var(--dim); }
+.avoid b { color: var(--warn); font-weight: 600; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--main); }
+
+.controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.group { display: flex; gap: 8px; flex-wrap: wrap; }
+button.btn { font: 500 14px var(--sans); color: var(--second); background: transparent; border: 1px solid var(--frame); border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+button.btn:hover { border-color: var(--second); }
+button.btn.primary { background: var(--main); color: var(--ground); border-color: var(--main); font-weight: 600; }
+button.btn.good { border-color: color-mix(in srgb, var(--accent) 60%, var(--ground)); color: var(--accent); }
+button:focus-visible, .chip:focus-visible, .card:focus-visible { outline: 2px solid var(--main); outline-offset: 3px; }
+.keys { font: 12px var(--mono); color: var(--dim); }
+.keys kbd { font: inherit; border: 1px solid var(--frame); border-radius: 4px; padding: 0 5px; color: var(--second); }
+
+.list { display: grid; gap: 10px; }
+.row { border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; background: var(--card); }
+.row .q2 { font-weight: 600; }
+.row .say2 { color: var(--dim); font-size: 15px; }
+.row .meta { font-size: 11px; }
+.done { color: var(--accent); }
+footer { font-size: 13px; color: var(--dim); border-top: 1px solid var(--rule); padding-top: 14px; }
+@media (max-width: 560px) { .face { padding: 22px 20px; } .card { min-height: 440px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><b>Graft</b><span>Judge prep · flash cards</span></div>
+    <div class="progress" id="progress"></div>
+  </header>
+
+  <nav class="filters" id="filters" aria-label="Filter by judge"></nav>
+
+  <main id="view"></main>
+
+  <div class="controls" id="controls">
+    <div class="group">
+      <button class="btn" id="prev" type="button">← Prev</button>
+      <button class="btn primary" id="flip" type="button">Flip</button>
+      <button class="btn" id="next" type="button">Next →</button>
+    </div>
+    <div class="group">
+      <button class="btn good" id="got" type="button">Got it</button>
+      <button class="btn" id="shuffle" type="button">Shuffle</button>
+      <button class="btn" id="mode" type="button">List view</button>
+    </div>
+  </div>
+  <p class="keys"><kbd>Space</kbd> flip · <kbd>←</kbd><kbd>→</kbd> move · <kbd>G</kbd> got it · <kbd>S</kbd> shuffle · <kbd>L</kbd> list</p>
+
+  <footer>Answers reflect what is built in rhino_client, git_engine and git_engine_rs as of 15 Nov 2026. "Watch-out" cards cover claims a judge may push on. Progress is kept in this browser only.</footer>
+</div>
+
+<script>
+const JUDGES = {
+  ai: 'Senior Applied AI Researcher',
+  digital: 'Director of Digital Practice',
+  prod: 'Director of Production Systems',
+  partner: 'Architecture Partner',
+  fellow: 'Applied Research AI Fellow',
+  watch: 'Watch-outs',
+};
+
+// say: the one line to lead with. points: facts to back it up. avoid: what not to claim.
+const CARDS = [
+  // ---- Senior Applied AI Researcher ----
+  { j: 'ai', q: 'What does the agent actually do? Which model, which tools, and how does it touch geometry?',
+    say: 'Agents run inside the Rhino plugin as Codex CLI workers, with tools that edit an isolated copy of the model, never the master.',
+    points: ['The agent host plans a session into tasks; each task has a scope (layers or selected objects).', 'Model and concurrency are set in the Agents tab settings; reasoning effort is low by default to keep cost down.', 'A finished task is a result you preview in the viewport and merge, like a pull request.'] },
+  { j: 'ai', q: 'How do you stop an agent from wrecking the master model?',
+    say: 'Agents can never write to main. They work on their own branch, and every merge into main needs a person to approve it.',
+    points: ['The server rejects agent commits to protected branches (403 forbidden).', 'An approval is tied to the exact versions the person reviewed; it goes stale if either side changes.', 'The approver is recorded on the merge commit.'] },
+  { j: 'ai', q: 'How do you evaluate whether the agent’s output is any good?',
+    say: 'Today a person reviews it visually and the server checks the model is valid; automated quality checks plug in as annotations.',
+    points: ['Every commit is validated: references, layer tree, unique names, settings.', 'Annotations attach check results to a commit, e.g. “142 breps valid”.', 'Next step: required checks before a merge into main.'],
+    avoid: '<b>Don’t claim</b> design-quality metrics or benchmarks. We don’t have them yet.' },
+  { j: 'ai', q: 'What does it cost to run? How do you track tokens?',
+    say: 'Input and output tokens are tracked live for every task and session, with a running total in the Agents tab.',
+    points: ['Default worker model is a budget model with low reasoning effort.', 'No automatic upgrade to a more expensive model.', 'Concurrency is capped in settings (1–4 workers).'] },
+  { j: 'ai', q: 'Why serialize the model to JSON entities instead of handing the agent a .3dm?',
+    say: 'Per-object data lets agents and the server read, diff and merge changes without opening Rhino, and only what changed is ever sent.',
+    points: ['Each object is an entity keyed by its Rhino GUID, with geometry and attributes as separate content-hashed blobs.', 'Identical content is stored once.', 'Agents without Rhino can produce compatible geometry with rhino3dm.'] },
+
+  // ---- Director of Digital Practice ----
+  { j: 'digital', q: 'How is this different from Worksessions, Speckle or a shared drive?',
+    say: 'Worksessions share live references but keep no history. Speckle moves data between apps. Graft is version control: branches, review and merge, inside Rhino.',
+    points: ['Every change is a version you can review or open later.', 'Options live on branches instead of file copies.', 'Agents get the same workflow as people.'] },
+  { j: 'digital', q: 'Do our designers need to learn git?',
+    say: 'No. They see Pull, Push, a branch picker and plain-language messages; the git concepts stay under the hood.',
+    points: ['“Open this version” instead of checkout.', 'A review screen before every merge, with keep-mine or keep-theirs for clashes.', 'Errors say what happened and what to do next.'] },
+  { j: 'digital', q: 'What happens to our existing projects?',
+    say: 'Open the file, push it, and it becomes the first version. History starts from there.',
+    points: ['Supported today: settings, layers and model geometry with attributes.'],
+    avoid: '<b>Be upfront:</b> blocks, materials, hatches, dimension styles and page-space objects are not supported yet.' },
+  { j: 'digital', q: 'How would you roll this out across a practice?',
+    say: 'Start with one competition team on a local server, then a shared office server once authentication is in.',
+    points: ['Local install: the plugin starts the server on your machine automatically.', 'Same API on a C# and a Rust server, so hosting is flexible.'] },
+
+  // ---- Director of Production Systems ----
+  { j: 'prod', q: 'Does it scale to a real production model?',
+    say: 'Commits and diffs cost time in proportion to the change, not the model size.',
+    points: ['<span class="num">100,000</span> objects: initial commit <span class="num">4.9 s</span>.', 'Editing <span class="num">100</span> of them: commit <span class="num">0.11 s</span>, diff <span class="num">0.02 s</span>.', 'Pull between options: <span class="num">130–460 ms</span>; attribute-only change <span class="num">16–24 ms</span>.', 'A Rust server with the same API is already written.'] },
+  { j: 'prod', q: 'What about hosting, security and authentication?',
+    say: 'It runs locally or on an office server today; real authentication is the first item on the roadmap.',
+    points: ['Nothing leaves your network on a local or office install.', 'The data store is abstracted: file system now, database or object storage later.'],
+    avoid: '<b>Be honest:</b> there is no authentication yet and identity is self-declared. Don’t imply it is ready for multi-office use.' },
+  { j: 'prod', q: 'Won’t every save mark everything as changed?',
+    say: 'No. Unchanged geometry is never re-serialized, so a save or a rename doesn’t produce false geometry changes.',
+    points: ['Rhino document events mark candidates; content hashes confirm real changes.', 'An attribute-only edit re-uploads attributes, not geometry.'] },
+  { j: 'prod', q: 'What if something fails halfway, or two people push at once?',
+    say: 'A pull is one undo step that rolls back on failure, and a branch only moves if nobody else moved it first.',
+    points: ['A stale push is rejected (409) and the person pulls first.', 'All data is content-addressed, so it can’t be silently altered.', 'The server refuses any commit that would make the model invalid.'] },
+  { j: 'prod', q: 'How big does storage get over a long project?',
+    say: 'Each version only stores what changed, and identical content is stored once.',
+    points: ['Preview meshes are kept separately from full geometry.'],
+    avoid: '<b>Not built yet:</b> garbage collection of unused data after deleted branches.' },
+
+  // ---- Architecture Partner ----
+  { j: 'partner', q: 'Why would my team use this tomorrow?',
+    say: 'It ends the final_final_USE-THIS-ONE file. One model, every option on its own branch, and you can review exactly what changed.',
+    points: ['Options for a client meeting are branches, not copies.', 'Agents explore options in the background while the team designs.', 'Open any past stage of the project.'] },
+  { j: 'partner', q: 'Who is accountable when an agent’s design ends up in the model?',
+    say: 'A named person approves every agent merge into main, and that approval is recorded permanently in the history.',
+    points: ['You see the incoming changes, conflicts and the reason approval is needed before merging.'] },
+  { j: 'partner', q: 'Can I compare design options side by side for a client?',
+    say: 'Yes. Options can be shown one at a time, overlaid, or side by side in the viewport, with new, changed and removed geometry highlighted.',
+    points: ['Green for new, blue for modified, red for removed, amber for conflicts.'] },
+  { j: 'partner', q: 'What happens when two people edit the same thing?',
+    say: 'Graft merges per object and per field, so most edits combine automatically; real clashes go to a keep-mine or keep-theirs choice.',
+    points: ['Geometry edited on one side and attributes on the other merge cleanly.', 'Rules can resolve repeat conflicts, but still need a person to sign off.'] },
+
+  // ---- Applied Research AI Fellow ----
+  { j: 'fellow', q: 'How do you recognise the same object across versions? What about explode or boolean?',
+    say: 'Objects are tracked by their Rhino GUID. An explode or boolean shows up as a delete plus an add.',
+    points: ['Geometric matching across new GUIDs is future work.'] },
+  { j: 'fellow', q: 'What’s new here compared with putting .3dm files in Git LFS?',
+    say: 'Git sees a binary blob it can’t merge. Graft versions every object, merges three ways per field, and guarantees each version is a valid model.',
+    points: ['Commits and diffs scale with the change via a Merkle tree.', 'Preview meshes and a human review step for agents are built in.'] },
+  { j: 'fellow', q: 'Could agents learn from which options people accept or reject?',
+    say: 'Yes: the history is a record of proposals, reviews and approvals, which is exactly the signal you’d want.',
+    points: ['Each merge records who approved it and which rules resolved conflicts.'],
+    avoid: '<b>Frame as future work.</b> No learning loop exists today.' },
+  { j: 'fellow', q: 'How do multiple agents coordinate?',
+    say: 'A session plans the work into tasks with dependencies; a child task waits for its parent and can branch from its result.',
+    points: ['Several workers can run at once, up to the concurrency limit.'] },
+
+  // ---- Watch-outs ----
+  { j: 'watch', q: 'The slide says “Everyone in the same file. Nothing overwritten.” Is it real-time co-editing?',
+    say: 'Not live co-editing. Each person and agent works on a branch, and merging brings it together. Nothing is overwritten without review.',
+    avoid: '<b>Don’t say</b> “real-time” or “simultaneous editing”.' },
+  { j: 'watch', q: 'Is this production-ready?',
+    say: 'It’s a working prototype: the engine, the Rhino plugin and the agent host all run end to end. Auth and wider object support come next.',
+    points: ['50+ engine tests pass on both servers.'] },
+  { j: 'watch', q: 'Your code still says RhinoTrunk. Why?',
+    say: 'Graft is our new name as of this weekend; the code rename is planned after the current branches merge.' },
+  { j: 'watch', q: 'Which parts of the demo are live and which are mocked?',
+    say: 'Pull, push, branches, history and agents are live against the engine. Know exactly which screens you will show before you go in.',
+    avoid: '<b>Check before presenting</b>: change counts per commit and the branch merge review in the panel still use sample data.' },
+];
+
+const KEY = 'graft-judge-prep-done';
+let done = new Set();
+try { done = new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...done])); } catch {} };
+
+let filter = 'all', order = CARDS.map((_, i) => i), pos = 0, flipped = false, list = false;
+const $ = (id) => document.getElementById(id);
+const visible = () => order.filter((i) => filter === 'all' || CARDS[i].j === filter);
+
+function renderFilters() {
+  const count = (j) => CARDS.filter((c) => j === 'all' || c.j === j).length;
+  $('filters').innerHTML = ['all', ...Object.keys(JUDGES)].map((j) =>
+    `<button class="chip" type="button" data-f="${j}" aria-pressed="${filter === j}">${j === 'all' ? 'All' : JUDGES[j]}<span class="n">${count(j)}</span></button>`).join('');
+}
+
+function card(i) {
+  const c = CARDS[i];
+  const tag = c.j === 'watch' ? '<span class="tag watch">watch-out</span>' : done.has(i) ? '<span class="tag done">got it ✓</span>' : '';
+  return `<div class="stage"><div class="card ${flipped ? 'flipped' : ''}" id="card" tabindex="0" role="button" aria-label="Flash card. Press to flip.">
+    <section class="face front"><div class="meta"><span class="who">${JUDGES[c.j]}</span>${tag}</div>
+      <p class="q">${c.q}</p><p class="hint">Say your answer out loud, then flip.</p></section>
+    <section class="face back"><div class="meta"><span class="who">${JUDGES[c.j]}</span><span>Answer</span></div>
+      <p class="say">${c.say}</p>
+      ${c.points ? `<ul class="points">${c.points.map((p) => `<li>${p}</li>`).join('')}</ul>` : ''}
+      ${c.avoid ? `<p class="avoid">${c.avoid}</p>` : ''}</section>
+  </div></div>`;
+}
+
+function render() {
+  renderFilters();
+  const v = visible();
+  pos = Math.min(pos, Math.max(0, v.length - 1));
+  const got = v.filter((i) => done.has(i)).length;
+  $('progress').innerHTML = list ? `<strong>${v.length}</strong> cards · ${got} got it` : `<strong>${v.length ? pos + 1 : 0}</strong> / ${v.length} · ${got} got it`;
+  $('controls').hidden = false;
+  ['prev', 'flip', 'next', 'got', 'shuffle'].forEach((id) => { $(id).hidden = list; });
+  $('mode').textContent = list ? 'Card view' : 'List view';
+  if (list) {
+    $('view').innerHTML = `<div class="list">${v.map((i) => { const c = CARDS[i]; return `<article class="row"><div class="meta"><span class="who">${JUDGES[c.j]}</span>${done.has(i) ? '<span class="done">got it ✓</span>' : ''}</div><div class="q2">${c.q}</div><div class="say2">${c.say}</div></article>`; }).join('')}</div>`;
+    return;
+  }
+  if (!v.length) { $('view').innerHTML = '<p>No cards.</p>'; return; }
+  $('view').innerHTML = card(v[pos]);
+  $('got').textContent = done.has(v[pos]) ? 'Practise again' : 'Got it';
+}
+
+const move = (d) => { const n = visible().length; if (!n) return; pos = (pos + d + n) % n; flipped = false; render(); };
+const flip = () => { flipped = !flipped; const el = $('card'); if (el) el.classList.toggle('flipped', flipped); };
+const toggleGot = () => { const i = visible()[pos]; if (i === undefined) return; done.has(i) ? done.delete(i) : done.add(i); save(); move(1); };
+const shuffle = () => { for (let i = order.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [order[i], order[k]] = [order[k], order[i]]; } pos = 0; flipped = false; render(); };
+
+$('filters').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (!b) return; filter = b.dataset.f; pos = 0; flipped = false; render(); });
+$('view').addEventListener('click', (e) => { if (e.target.closest('#card')) flip(); });
+$('prev').onclick = () => move(-1);
+$('next').onclick = () => move(1);
+$('flip').onclick = flip;
+$('got').onclick = toggleGot;
+$('shuffle').onclick = shuffle;
+$('mode').onclick = () => { list = !list; render(); };
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest('input, textarea')) return;
+  if (e.key === ' ' || e.key === 'Enter') { if (!list) { e.preventDefault(); flip(); } }
+  else if (e.key === 'ArrowRight') move(1);
+  else if (e.key === 'ArrowLeft') move(-1);
+  else if (e.key.toLowerCase() === 'g' && !list) toggleGot();
+  else if (e.key.toLowerCase() === 's' && !list) shuffle();
+  else if (e.key.toLowerCase() === 'l') { list = !list; render(); }
+});
+render();
+</script>
+</body>
+</html>
