@@ -4,8 +4,8 @@
 04_Merge seating
 05_Add acces rows - off
 06_Add center circulation - off
-Add balcony
-Generate balcony slab
-Generate balcony guardrail
-Remove seats for access rows - off
-Merge balcony
+07_Add balcony
+08_Generate balcony slab
+09_Generate balcony guardrail
+10_Remove seats for access rows - off
+11_Merge balcony
